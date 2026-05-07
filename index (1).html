@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meal Prep">
+<meta name="theme-color" content="#0B0E14">
+<title>Meal Prep Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0E14;
+    --surface: rgba(255,255,255,0.05);
+    --surface2: rgba(255,255,255,0.08);
+    --border: rgba(255,255,255,0.1);
+    --border2: rgba(255,255,255,0.18);
+    --green: #74FFD8;
+    --green-bright: #74FFD8;
+    --green-dim: rgba(116,255,216,0.1);
+    --green-glow: rgba(116,255,216,0.3);
+    --text: #FFFFFF;
+    --text2: rgba(255,255,255,0.6);
+    --text3: rgba(255,255,255,0.35);
+    --protein: #7EB8F7;
+    --fat: #F7C97E;
+    --carbs: #B97EF7;
+    --cal: #74FFD8;
+    --danger: #F77E7E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; overflow-x: hidden; }
+
+  /* LAYOUT */
+  .app { max-width: 430px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  .header { padding: 20px 20px 0; display: flex; align-items: flex-end; justify-content: space-between; }
+  .header-title { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 300; color: var(--text); line-height: 1; }
+  .header-title span { color: var(--green-bright); font-style: italic; }
+  .edit-toggle { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; }
+  .edit-toggle:hover, .edit-toggle.active { background: var(--green-dim); border-color: var(--green); color: var(--green-bright); }
+  .main { flex: 1; padding: 16px 20px 40px; }
+
+  /* DAY TABS */
+  .day-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .tab { flex: 1; padding: 8px 4px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text3); cursor: pointer; text-align: center; transition: all 0.15s; }
+  .tab:hover { border-color: var(--border2); color: var(--text2); }
+  .tab.active { background: var(--surface2); border-color: var(--green); color: var(--green-bright); }
+  .tab.complete { background: var(--green-dim); border-color: var(--green); color: var(--green-bright); }
+  .tab.complete::after { content: ' ✓'; }
+
+  /* MACRO TRACKERS */
+  .trackers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .tracker { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tracker-label { font-size: 10px; letter-spacing: 0.1em; color: var(--text3); margin-bottom: 4px; text-transform: uppercase; }
+  .tracker-row { display: flex; align-items: baseline; justify-content: space-between; }
+  .tracker-val { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 300; line-height: 1; }
+  .tracker-val.cal { color: var(--cal); }
+  .tracker-val.protein { color: var(--protein); }
+  .tracker-val.fat { color: var(--fat); }
+  .tracker-val.carbs { color: var(--carbs); }
+  .tracker-goal { font-size: 10px; color: var(--text3); }
+  .tracker-bar { height: 3px; background: var(--border); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+  .tracker-fill { height: 3px; border-radius: 99px; transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .tracker-fill.cal { background: var(--cal); }
+  .tracker-fill.protein { background: var(--protein); }
+  .tracker-fill.fat { background: var(--fat); }
+  .tracker-fill.carbs { background: var(--carbs); }
+
+  /* SECTION LABEL */
+  .section-label { font-size: 10px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; margin: 16px 0 8px; }
+
+  /* CHECK ITEMS */
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; cursor: pointer; transition: all 0.15s; }
+  .check-item:hover { border-color: var(--border2); }
+  .check-item.checked { background: var(--green-dim); border-color: var(--green-glow); }
+  .check-box { width: 22px; height: 22px; min-width: 22px; border-radius: 6px; border: 1.5px solid var(--border2); display: flex; align-items: center; justify-content: center; margin-top: 2px; transition: all 0.15s; font-size: 12px; }
+  .check-item.checked .check-box { background: var(--green); border-color: var(--green); color: #0B0E14; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .check-item.checked .item-name { color: var(--green-bright); text-decoration: line-through; text-decoration-color: var(--green-glow); }
+  .item-detail { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+  .check-item.checked .item-detail { color: var(--text3); }
+  .item-macros { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .mpill { font-size: 10px; padding: 2px 7px; border-radius: 99px; border: 1px solid; letter-spacing: 0.03em; }
+  .mpill.cal { color: var(--cal); border-color: rgba(116,255,216,0.25); background: rgba(116,255,216,0.07); }
+  .mpill.p { color: var(--protein); border-color: rgba(126,184,247,0.25); background: rgba(126,184,247,0.07); }
+  .mpill.f { color: var(--fat); border-color: rgba(247,201,126,0.25); background: rgba(247,201,126,0.07); }
+  .mpill.c { color: var(--carbs); border-color: rgba(185,126,247,0.25); background: rgba(185,126,247,0.07); }
+  .check-item.checked .mpill { opacity: 0.6; }
+
+  /* COMPLETE BANNER */
+  .complete-banner { display: none; text-align: center; padding: 20px; background: rgba(116,255,216,0.08); border: 1px solid rgba(116,255,216,0.3); border-radius: 12px; margin-top: 16px; }
+  .complete-banner.show { display: block; }
+  .complete-banner .cb-title { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 300; font-style: italic; color: var(--green-bright); margin-bottom: 4px; }
+  .complete-banner .cb-sub { font-size: 11px; color: var(--text2); }
+
+  /* RESET */
+  .reset-btn { width: 100%; margin-top: 12px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--text3); background: transparent; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .reset-btn:hover { border-color: var(--border2); color: var(--text2); }
+
+  /* EDITOR PANEL */
+  .editor-panel { display: none; padding-bottom: 40px; }
+  .editor-panel.open { display: block; }
+  .editor-day-select { width: 100%; margin-bottom: 16px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 12px; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 8px; outline: none; }
+  .editor-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; }
+  .editor-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .editor-section-input { flex: 1; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; border: none; color: var(--text3); outline: none; width: 100%; }
+  .del-btn { background: transparent; border: 1px solid var(--border); color: var(--danger); font-size: 14px; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .del-btn:hover { background: #2a1010; border-color: var(--danger); }
+  .editor-field { width: 100%; margin-bottom: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; outline: none; transition: border-color 0.15s; }
+  .editor-field:focus { border-color: var(--green); }
+  .macro-fields { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .macro-field-wrap { display: flex; flex-direction: column; gap: 3px; }
+  .macro-field-label { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .macro-field-label.cal { color: var(--cal); }
+  .macro-field-label.p { color: var(--protein); }
+  .macro-field-label.f { color: var(--fat); }
+  .macro-field-label.c { color: var(--carbs); }
+  .macro-field { width: 100%; padding: 6px 8px; font-family: 'DM Mono', monospace; font-size: 12px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; outline: none; }
+  .macro-field:focus { border-color: var(--green); }
+  .add-item-btn { width: 100%; padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--green); background: var(--green-dim); border: 1px dashed var(--green-glow); border-radius: 8px; cursor: pointer; margin-top: 4px; transition: all 0.15s; }
+  .add-item-btn:hover { background: var(--surface2); border-color: var(--green); }
+  .editor-save-btn { width: 100%; margin-top: 16px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.08em; color: #0B0E14; background: var(--green); border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .editor-save-btn:hover { background: var(--green-bright); filter: brightness(1.1); }
+  .editor-reset-btn { width: 100%; margin-top: 8px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.08em; color: var(--danger); background: transparent; border: 1px solid #3a2020; border-radius: 8px; cursor: pointer; transition: all 0.15s; }
+  .editor-reset-btn:hover { background: #2a1010; border-color: var(--danger); }
+  .save-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--green); color: #0B0E14; font-family: 'DM Mono', monospace; font-size: 12px; padding: 10px 20px; border-radius: 20px; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; pointer-events: none; }
+  .save-toast.show { transform: translateX(-50%) translateY(0); }
+  .view-panel { display: block; }
+  .view-panel.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-title">meal<br><span>prep.</span></div>
+    <button class="edit-toggle" id="editToggle" onclick="toggleEdit()">edit week</button>
+  </div>
+
+  <div class="main">
+    <!-- VIEW PANEL -->
+    <div class="view-panel" id="viewPanel">
+      <div class="day-tabs" id="tabs"></div>
+      <div class="trackers" id="trackers"></div>
+      <div id="checklist"></div>
+      <div class="complete-banner" id="banner">
+        <div class="cb-title">Day complete.</div>
+        <div class="cb-sub">You nailed every meal today. Keep it going.</div>
+      </div>
+      <button class="reset-btn" onclick="resetDay()">↺ reset today</button>
+    </div>
+
+    <!-- EDITOR PANEL -->
+    <div class="editor-panel" id="editorPanel">
+      <select class="editor-day-select" id="editorDaySelect" onchange="renderEditor()"></select>
+      <div id="editorItems"></div>
+      <button class="add-item-btn" onclick="addEditorItem()">+ add item</button>
+      <button class="editor-save-btn" onclick="saveEdits()">save changes</button>
+      <button class="editor-reset-btn" onclick="resetToDefaults()">reset to default meal plan</button>
+    </div>
+  </div>
+</div>
+<div class="save-toast" id="toast">Changes saved!</div>
+
+<script>
+const DEFAULT_DAYS = [
+  { name: "Mon", calGoal: 1601, items: [
+    { section: "Breakfast", name: "Sheet-Pan Breakfast Burritos", detail: "2 burritos", cal: 319, p: 29, f: 18, c: 11 },
+    { section: "Lunch", name: "Buffalo Chicken Rice Bowl", detail: "1 serving", cal: 401, p: 37, f: 8, c: 43 },
+    { section: "Dinner", name: "Ground Beef Shell Pasta", detail: "1 serving", cal: 385, p: 31.5, f: 11.7, c: 40 },
+    { section: "Snack 1", name: "Greek yogurt with honey", detail: "1 cup nonfat Greek yogurt + 1 tsp honey", cal: 150, p: 22, f: 0, c: 14 },
+    { section: "Snack 2", name: "Apple", detail: "1 medium apple", cal: 95, p: 0, f: 0, c: 25 },
+  ]},
+  { name: "Tue", calGoal: 1581, items: [
+    { section: "Breakfast", name: "Sheet-Pan Breakfast Burritos", detail: "2 burritos", cal: 319, p: 29, f: 18, c: 11 },
+    { section: "Lunch", name: "Ground Beef Shell Pasta", detail: "1 serving", cal: 385, p: 31.5, f: 11.7, c: 40 },
+    { section: "Dinner", name: "Buffalo Chicken Rice Bowl", detail: "1 serving", cal: 401, p: 37, f: 8, c: 43 },
+    { section: "Snack 1", name: "Cottage cheese + pineapple", detail: "3/4 cup cottage cheese + 1/2 cup pineapple chunks", cal: 181, p: 20.5, f: 3, c: 18 },
+    { section: "Snack 2", name: "Rice cakes with peanut butter", detail: "2 plain rice cakes + 1 tbsp peanut butter", cal: 140, p: 4, f: 8, c: 18 },
+  ]},
+  { name: "Wed", calGoal: 1601, items: [
+    { section: "Breakfast", name: "Sheet-Pan Breakfast Burritos", detail: "2 burritos", cal: 319, p: 29, f: 18, c: 11 },
+    { section: "Lunch", name: "Buffalo Chicken Rice Bowl", detail: "1 serving", cal: 401, p: 37, f: 8, c: 43 },
+    { section: "Dinner", name: "Ground Beef Shell Pasta", detail: "1 serving", cal: 385, p: 31.5, f: 11.7, c: 40 },
+    { section: "Snack 1", name: "Hard boiled egg", detail: "1 large egg", cal: 70, p: 6, f: 5, c: 0 },
+    { section: "Snack 2", name: "Greek yogurt with honey", detail: "3/4 cup nonfat Greek yogurt + 1 tsp honey", cal: 115, p: 17, f: 0, c: 11 },
+    { section: "Snack 3", name: "Pineapple chunks", detail: "1/2 cup pineapple chunks", cal: 41, p: 0.5, f: 0, c: 11 },
+  ]},
+  { name: "Thu", calGoal: 1581, items: [
+    { section: "Breakfast", name: "Sheet-Pan Breakfast Burritos", detail: "2 burritos", cal: 319, p: 29, f: 18, c: 11 },
+    { section: "Lunch", name: "Ground Beef Shell Pasta", detail: "1 serving", cal: 385, p: 31.5, f: 11.7, c: 40 },
+    { section: "Dinner", name: "Buffalo Chicken Rice Bowl", detail: "1 serving", cal: 401, p: 37, f: 8, c: 43 },
+    { section: "Snack 1", name: "Protein shake", detail: "1 Premier Protein shake", cal: 160, p: 30, f: 3, c: 4 },
+    { section: "Snack 2", name: "Apple", detail: "1 medium apple", cal: 95, p: 0, f: 0, c: 25 },
+  ]},
+  { name: "Fri", calGoal: 1601, items: [
+    { section: "Breakfast", name: "Sheet-Pan Breakfast Burritos", detail: "2 burritos", cal: 319, p: 29, f: 18, c: 11 },
+    { section: "Lunch", name: "Buffalo Chicken Rice Bowl", detail: "1 serving", cal: 401, p: 37, f: 8, c: 43 },
+    { section: "Dinner", name: "Ground Beef Shell Pasta", detail: "1 serving", cal: 385, p: 31.5, f: 11.7, c: 40 },
+    { section: "Snack 1", name: "Greek yogurt with honey", detail: "3/4 cup nonfat Greek yogurt + 1 tsp honey", cal: 115, p: 17, f: 0, c: 11 },
+    { section: "Snack 2", name: "Rice cakes with peanut butter", detail: "2 plain rice cakes + 1 tbsp peanut butter", cal: 140, p: 4, f: 8, c: 18 },
+    { section: "Snack 3", name: "Hard boiled egg", detail: "1 large egg", cal: 70, p: 6, f: 5, c: 0 },
+  ]},
+];
+
+function loadDays() {
+  try { const d = localStorage.getItem('mealplan_days'); return d ? JSON.parse(d) : JSON.parse(JSON.stringify(DEFAULT_DAYS)); }
+  catch(e) { return JSON.parse(JSON.stringify(DEFAULT_DAYS)); }
+}
+function saveDays(days) { localStorage.setItem('mealplan_days', JSON.stringify(days)); }
+function loadState(days) {
+  try { const s = localStorage.getItem('mealplan_state'); return s ? JSON.parse(s) : days.map(d => Array(d.items.length).fill(false)); }
+  catch(e) { return days.map(d => Array(d.items.length).fill(false)); }
+}
+function saveState(state) { localStorage.setItem('mealplan_state', JSON.stringify(state)); }
+
+let days = loadDays();
+let state = loadState(days);
+let activeDay = 0;
+let editMode = false;
+let editorDay = 0;
+
+function ensureState() {
+  while (state.length < days.length) state.push([]);
+  days.forEach((d, i) => { while (state[i].length < d.items.length) state[i].push(false); state[i] = state[i].slice(0, d.items.length); });
+}
+
+function toggleEdit() {
+  editMode = !editMode;
+  document.getElementById('editToggle').classList.toggle('active', editMode);
+  document.getElementById('editToggle').textContent = editMode ? 'done editing' : 'edit week';
+  document.getElementById('viewPanel').classList.toggle('hidden', editMode);
+  document.getElementById('editorPanel').classList.toggle('open', editMode);
+  if (editMode) { renderEditorDaySelect(); renderEditor(); }
+}
+
+function renderEditorDaySelect() {
+  const sel = document.getElementById('editorDaySelect');
+  sel.innerHTML = days.map((d, i) => `<option value="${i}" ${i===editorDay?'selected':''}>${d.name}</option>`).join('');
+}
+
+function renderEditor() {
+  editorDay = parseInt(document.getElementById('editorDaySelect').value);
+  const day = days[editorDay];
+  const container = document.getElementById('editorItems');
+  container.innerHTML = '';
+  day.items.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'editor-item';
+    div.innerHTML = `
+      <div class="editor-item-header">
+        <input class="editor-section-input" value="${item.section}" placeholder="SECTION" data-idx="${idx}" data-field="section">
+        <button class="del-btn" onclick="deleteItem(${idx})">✕</button>
+      </div>
+      <input class="editor-field" value="${item.name}" placeholder="Meal name" data-idx="${idx}" data-field="name">
+      <input class="editor-field" value="${item.detail}" placeholder="Details / measurements" data-idx="${idx}" data-field="detail">
+      <div class="macro-fields">
+        <div class="macro-field-wrap"><div class="macro-field-label cal">cal</div><input class="macro-field" type="number" value="${item.cal}" data-idx="${idx}" data-field="cal"></div>
+        <div class="macro-field-wrap"><div class="macro-field-label p">protein</div><input class="macro-field" type="number" value="${item.p}" data-idx="${idx}" data-field="p"></div>
+        <div class="macro-field-wrap"><div class="macro-field-label f">fat</div><input class="macro-field" type="number" value="${item.f}" data-idx="${idx}" data-field="f"></div>
+        <div class="macro-field-wrap"><div class="macro-field-label c">carbs</div><input class="macro-field" type="number" value="${item.c}" data-idx="${idx}" data-field="c"></div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('input').forEach(inp => inp.addEventListener('input', syncEditorField));
+}
+
+function syncEditorField(e) {
+  const idx = parseInt(e.target.dataset.idx);
+  const field = e.target.dataset.field;
+  const val = ['cal','p','f','c'].includes(field) ? parseFloat(e.target.value)||0 : e.target.value;
+  days[editorDay].items[idx][field] = val;
+}
+
+function deleteItem(idx) {
+  days[editorDay].items.splice(idx, 1);
+  state[editorDay].splice(idx, 1);
+  renderEditor();
+}
+
+function addEditorItem() {
+  days[editorDay].items.push({ section: 'Snack', name: '', detail: '', cal: 0, p: 0, f: 0, c: 0 });
+  state[editorDay].push(false);
+  renderEditor();
+  setTimeout(() => { const items = document.querySelectorAll('.editor-item'); items[items.length-1].scrollIntoView({behavior:'smooth'}); }, 100);
+}
+
+function saveEdits() {
+  ensureState();
+  saveDays(days);
+  saveState(state);
+  showToast('Changes saved!');
+}
+
+function resetToDefaults() {
+  if (!confirm('Reset to the original meal plan? This cannot be undone.')) return;
+  days = JSON.parse(JSON.stringify(DEFAULT_DAYS));
+  state = days.map(d => Array(d.items.length).fill(false));
+  saveDays(days); saveState(state);
+  renderEditorDaySelect(); renderEditor();
+  showToast('Reset to default plan!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  days.forEach((d, i) => {
+    const done = state[i] && state[i].length > 0 && state[i].every(Boolean);
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i===activeDay?' active':'') + (done?' complete':'');
+    btn.textContent = d.name;
+    btn.onclick = () => { activeDay = i; render(); };
+    el.appendChild(btn);
+  });
+}
+
+function renderTrackers() {
+  const day = days[activeDay];
+  let cal=0, p=0, f=0, c=0;
+  (state[activeDay]||[]).forEach((chk, i) => { if(chk && day.items[i]) { cal+=day.items[i].cal; p+=day.items[i].p; f+=day.items[i].f; c+=day.items[i].c; } });
+  const pctCal = Math.min(100, Math.round((cal/day.calGoal)*100));
+  const pctP = Math.min(100, Math.round((p/130)*100));
+  const pctF = Math.min(100, Math.round((f/45)*100));
+  const pctC = Math.min(100, Math.round((c/160)*100));
+  document.getElementById('trackers').innerHTML = `
+    <div class="tracker"><div class="tracker-label">Calories</div><div class="tracker-row"><div class="tracker-val cal">${Math.round(cal)}</div><div class="tracker-goal">/ ${day.calGoal}</div></div><div class="tracker-bar"><div class="tracker-fill cal" style="width:${pctCal}%"></div></div></div>
+    <div class="tracker"><div class="tracker-label">Protein</div><div class="tracker-row"><div class="tracker-val protein">${Math.round(p)}g</div><div class="tracker-goal">/ 130g</div></div><div class="tracker-bar"><div class="tracker-fill protein" style="width:${pctP}%"></div></div></div>
+    <div class="tracker"><div class="tracker-label">Fat</div><div class="tracker-row"><div class="tracker-val fat">${Math.round(f)}g</div><div class="tracker-goal">/ 45g</div></div><div class="tracker-bar"><div class="tracker-fill fat" style="width:${pctF}%"></div></div></div>
+    <div class="tracker"><div class="tracker-label">Carbs</div><div class="tracker-row"><div class="tracker-val carbs">${Math.round(c)}g</div><div class="tracker-goal">/ 160g</div></div><div class="tracker-bar"><div class="tracker-fill carbs" style="width:${pctC}%"></div></div></div>
+  `;
+}
+
+function renderChecklist() {
+  const container = document.getElementById('checklist');
+  container.innerHTML = '';
+  const day = days[activeDay];
+  day.items.forEach((item, idx) => {
+    const checked = state[activeDay] && state[activeDay][idx];
+    const sec = document.createElement('div');
+    sec.className = 'section-label';
+    sec.textContent = item.section;
+    container.appendChild(sec);
+    const el = document.createElement('div');
+    el.className = 'check-item' + (checked ? ' checked' : '');
+    el.innerHTML = `
+      <div class="check-box">${checked ? '✓' : ''}</div>
+      <div class="item-body">
+        <div class="item-name">${item.name}</div>
+        ${item.detail ? `<div class="item-detail">${item.detail}</div>` : ''}
+        <div class="item-macros">
+          <span class="mpill cal">${item.cal} cal</span>
+          <span class="mpill p">${item.p}g protein</span>
+          <span class="mpill f">${item.f}g fat</span>
+          <span class="mpill c">${item.c}g carbs</span>
+        </div>
+      </div>
+    `;
+    el.onclick = () => {
+      if (!state[activeDay]) state[activeDay] = Array(day.items.length).fill(false);
+      state[activeDay][idx] = !state[activeDay][idx];
+      saveState(state);
+      render();
+    };
+    container.appendChild(el);
+  });
+}
+
+function renderBanner() {
+  const done = state[activeDay] && state[activeDay].length > 0 && state[activeDay].every(Boolean);
+  document.getElementById('banner').classList.toggle('show', done);
+}
+
+function resetDay() {
+  state[activeDay] = Array(days[activeDay].items.length).fill(false);
+  saveState(state);
+  render();
+}
+
+function render() { ensureState(); renderTabs(); renderTrackers(); renderChecklist(); renderBanner(); }
+render();
+</script>
+</body>
+</html>
